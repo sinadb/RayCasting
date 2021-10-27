@@ -1,0 +1,181 @@
+let x = 200;
+let y = 200;
+
+// 88 rays of light from 1 to 89 degrees
+
+let data = [];
+
+
+// check the correct intersection
+
+let distance = function(val,ray_origin){
+  let dis =  Math.sqrt(Math.pow((val[0][0]-ray_origin[0]),2)+Math.pow((val[0][1]-ray_origin[1]),2))
+  let temp;
+  let index = 0;
+  
+  for(let i = 1; i!=val.length; i++){
+    temp = Math.sqrt(Math.pow((val[i][0]-ray_origin[0]),2)+Math.pow((val[i][1]-ray_origin[1]),2))
+    if(temp<dis){
+      dis = temp;
+      index = i;
+    }
+  }
+  let intersection = [];
+  intersection.push(val[index][0])
+  intersection.push(val[index][1])
+  return intersection;
+}
+let intersect = function(border, ray, endpoint = [200,200]){
+  
+  let intersection = 0;
+  
+  
+  let x_bound = [border[0],border[2]];
+  let tangent_border = (border[3]-border[1])/(border[2]-border[0]);
+  if(ray[0]%90==0 && (border[1]>ray[1] || border[3]>ray[1])){
+    intersection.push(ray[1],((ray[1])*(tangent_border) + border[3] - (tangent_border)*(border[1])))
+  }
+  if(ray[0]%90!=0){
+  let tangent_ray = Math.tan(ray[0]*Math.PI/180);
+  let ray_boundary_tester = function(x){
+    let y = (x)*(tangent_ray) + ray[2] - (tangent_ray)*(ray[1]);
+    
+    let epsilon = y - ((x)*(tangent_border) + border[3] - (tangent_border)*(border[2]))
+    if(Math.abs(epsilon)<0.1){
+      intersection = []
+      if (y<endpoint[1] && y>ray[2]){
+      intersection.push(x);
+      intersection.push(y);}
+      else{
+        intersection = 0;
+      }
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+  for(let i = x_bound[0]; i<=x_bound[1];i+=0.1){
+    let val = ray_boundary_tester(i);
+    if(val){
+      break;
+    }
+    
+  }
+  }
+  return intersection;
+  
+}
+
+// wall class
+class createBoundary{
+  constructor(x,y,z,k){
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.k = k;
+  }
+  drawBoundary(){
+    push();
+    strokeWeight(10);
+    stroke('red');
+     line(this.x,this.y,this.z,this.k);
+    pop();
+  }
+}
+
+//create wall array
+
+let wall = [];
+
+wall.push(new createBoundary(-300,100,100,200));
+wall.push(new createBoundary(-300,100,100,0));
+wall.push(new createBoundary(-100,50,300,150));
+wall.push(new createBoundary(-200,-100,300,300));
+
+
+
+
+
+
+
+
+
+// intersection point or 0 if no intersection.
+let val = [];
+
+let temp = 0;
+// save al ntersection in an array to test for the correct one
+let temp_inter = [];
+for(let j = 1; j!=90; j++){
+  for(let i of wall){
+    temp =intersect([i.x,i.y,i.z,i.k],[j,(x-200),(200-y)], [200,200]);
+    if(temp!=0){
+      temp_inter.push(temp);
+    }
+  }
+    
+    if(temp_inter.length!=0){
+      val.push(distance(temp_inter,[(x-200),(200-y)]));
+    }
+    else{
+      val.push(temp);
+    }
+    
+}
+
+
+
+function mousePressed(){
+  val = [];
+  temp_inter = [];
+  x = mouseX;
+  y = mouseY;
+ 
+
+  for(let j = 1; j!=46; j++){
+    temp_inter = [];
+  for(let i of wall){
+    temp =intersect([i.x,i.y,i.z,i.k],[j,(x-200),(200-y)], [200,200]);
+    if(temp!=0){
+      temp_inter.push(temp);
+    }
+  }
+    
+    if(temp_inter.length!=0){
+      val.push(distance(temp_inter,[(x-200),(200-y)]));
+    }
+    else{
+      val.push(0);
+    }
+  }
+    // need to clear temp_inter
+
+}
+
+
+
+function setup() {
+  createCanvas(400, 400);
+}
+
+function draw() {
+  background(0);
+  translate(200,200);
+  strokeWeight(1);
+  stroke('white');
+  scale(1,-1)
+  for(let i=0; i!=45; i++){
+    if(val[i]==0){
+      line((x-200),(200-y),1000+(x-200),(1000*Math.tan((i+1)*Math.PI/180)+(200-y)))}
+    else{
+      line((x-200),(200-y),val[i][0],val[i][1])
+    }
+    
+  }
+
+ 
+  wall.map(x=>x.drawBoundary());
+
+  
+}
